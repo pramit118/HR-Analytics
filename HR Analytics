@@ -1,0 +1,51 @@
+HR_Churn=HR_comma_sep
+HR_Churn=as.data.frame(HR_Churn)
+colSums(is.na(HR_Churn))
+
+
+col_names=c(6:10)
+HR_Churn[col_names] <- lapply(HR_Churn[col_names] , as.factor)
+
+set.seed(101)
+library(caret)
+index=sample(nrow(HR_Churn),size = 0.8*nrow(HR_Churn))
+
+trainset=HR_Churn[index,]
+testset=HR_Churn[-index,]
+class(testset)
+control=trainControl(method = "cv",number = 5)
+
+#ANN:
+model_pca_nnet <- train(left~.,trainset,
+                        method="nnet",
+                        #metric="ROC",
+                        preProcess = c("center","scale"),
+                        tuneLength=10,
+                        trace=FALSE,
+                        trControl=control)
+predknn=predict(model_pca_nnet,testset)
+confusionMatrix(predknn,testset$left)
+
+#KNN
+knnFit <- train(left ~ ., data = trainset, method = "knn", 
+                trControl = control, preProcess = c("center","scale"),tuneLength = 20)
+knnFit
+
+predknn=predict(knnFit,testset)
+confusionMatrix(predknn,testset$left)
+
+#NB
+plot(density(HR_Churn$average_montly_hours))
+NBfit= train(left~.,data=trainset,method="nb", trControl = control)
+predNB=predict(NBfit,testset)
+confusionMatrix(predNB,testset$left)
+
+#C5.0
+C5fit=train(left~.,data=trainset,method="C5.0",trControl = control)
+predC5=predict(C5fit,testset)
+confusionMatrix(predC5,testset$left)
+
+#RF
+RFfit=train(left~.,data=trainset,method="rf",trControl = control)
+predC5=predict(C5fit,testset)
+confusionMatrix(predC5,testset$left)
